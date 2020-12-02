@@ -1,20 +1,20 @@
 # Teodora Tockovska
-# Sep 30, 2020
+# Dec 1, 2020
 
 # This script contains the code to perform spatial pattern analyses on host-associated from the Earth Microbiome Project.
 
 # Loading my script which contains functions 
 source("Functions.R")
 
-# Read the host associated metadata into R
+# Read the host associated metadata
 host_associated_microbiome_dataset <- read.csv(file = "host_associated_EMP.csv", sep = "\t")
 nrow(host_associated_microbiome_dataset)
 
-# Checking and Removing any NA values:
+# Checking and removing NA values:
 host_associated_microbiome_dataset <- check_and_remove_NAs(host_associated_microbiome_dataset)
 nrow(host_associated_microbiome_dataset)
 
-# Filter the dataset to extract the hosts with 30 or more records. I saved the dataframe of the host records into a variable. I chose "host_scientific_name" column instead of "host_species" because 882 hosts do not have a species names. This is because the researchers did not record their names in the metadata. Next, I viewed the dataframe and ordered it according to the decreasing records. The hosts have species names except for 4 hosts that only have their genus name. Homo sapiens (Humans) have the most records (3171) and Felis catus (domestic cats) have the fewest records (30).
+# Filter the dataset to extract the hosts with 30 or more records. I saved the dataframe of the host records into a variable. I chose "host_scientific_name" column instead of "host_species" because 882 hosts do not have a species names. Next, I viewed the dataframe and ordered it according to the decreasing records. The hosts have species names except for 4 hosts that only have their genus name. Homo sapiens (Humans) have the most records (3171) and Felis catus (domestic cats) have the fewest records (30).
 hosts_with_30_records <- as.data.frame(table(host_associated_microbiome_dataset$host_scientific_name)) %>% filter(Freq>=30)
 hosts_with_30_records[order(hosts_with_30_records$Freq, decreasing = T),]
 
@@ -25,25 +25,8 @@ for (i in 1:nrow(hosts_with_30_records)){
                                                                   host_associated_microbiome_dataset$host_scientific_name),]
 }
 
-# The next goal is to plot the coordinate of each host to visualize their samples and determine outliers. However, there are hosts that were only sampled from 1 unique coordinate (Lat, Long). I call the function chosen_samples() that will check the unique coordinates per host and exclude hosts that were sampled from only 1 region (unique coordinate). The function will also plot the coordinates of the chosen hosts. The function also returns a list of the selected hosts. The function also prints out the number of selected hosts. There are 20 hosts that were selected based on the criteria.
+# The next goal is to plot the coordinate of each host to visualize their samples and determine outliers. However, there are hosts that were only sampled from 1 unique coordinate (Lat, Long). I call the function chosen_samples() that will check the unique coordinates per host and exclude hosts that were sampled from only 1 region (unique coordinate). The function will also plot the coordinates of the chosen hosts. The function also returns a list of the selected hosts ad prints out the number of selected hosts. There are 20 hosts that were selected based on the criteria.
 greater_than_1_region <- chosen_samples(lst_df_hosts_with_30_records, hosts_with_30_records, type = "Host Genus/Species")
-
-# Reviewing the values of the coordinates for each host. There seems to be an error with the first host's longitude records (host species "s__Ateles_geoffroyi"). The authors recorded 36 samples with longitudes 86.875 instead of -86.875. America's longitudes are negative values.
-# line = paste("Sep 28, 2020", 
-#              "This file contains the host species/genus names followed by dataframes that contain the following columns:", 
-#              "Host Scientific Name, Host Species, Country, Latitude, Longitude, Number of Records", 
-#              sep = "\n")
-# write(line, file = "Regions_Hosts_28Sep2020.txt")
-# write("\n", file = "Regions_Hosts_28Sep2020.txt", append = TRUE)
-for(i in 1:length(greater_than_1_region)){
-  host <- paste("Host Species #", as.character(i), sep=" ")
-  Regions <- as.data.frame(table(greater_than_1_region[[i]][,c(36,44,46:48)])) %>% filter(Freq>0)
-  # write(host, file = "Regions_Hosts_28Sep2020.txt", append=TRUE)
-  # write.table(Regions, file = "Regions_Hosts_28Sep2020.txt", append=TRUE, sep = "\t", col.names = FALSE, row.names = FALSE)
-  # write("\n", file = "Regions_Hosts_28Sep2020.txt", append = TRUE)
-  print(host)
-  print(Regions)
-}
 
 # Remove variables that are no longer needed:
 rm(lst_df_hosts_with_30_records, hosts_with_30_records)
@@ -51,7 +34,7 @@ rm(lst_df_hosts_with_30_records, hosts_with_30_records)
 # Next, extract the coordinate dataframes per host into a list by using the function get_coordinates(). Using the list of coordinate dataframes, I check which UTM zones the samples were taken from. This is important because samples can be taken from all over the world and I would like to ensure that the samples that I am working with are not too far away from each other. 
 coordinate_list <- get_coordinates(data = greater_than_1_region, lat = latitude_deg, long = longitude_deg, type = "Host")
 
-# Next, I check whether the coordinates fall in the correct hemispheres:
+# Next, I check whether the coordinates fall in the correct hemispheres. I use the custom function check_hemisphere() and pass 4 as an argument because that represents the "Country" column.
 coordinate_list %>% map(~.x %>% check_hemisphere(4))
 
 # There are errors in the first list. The country is USA but the hemispheres were recorded as NW and NE. USA is in the NW hemisphere, so that means the longitudes need to be negative. However, NE indicates that some longitudes were recorded as positive. I will change those.
@@ -75,7 +58,6 @@ lst_uniq_UTM_zones[-single_zone_ids]
 
 # Checking the names, which generates a tibble
 host_species_names <- greater_than_1_region %>% map(~.x %>% group_by(host_scientific_name) %>% summarise(n=n()) %>% select(host_scientific_name))
-# greater_than_1_region %>% map(~.x %>% group_by(host_common_name_provided) %>% summarise(n=n()) )
 
 # Hosts that were sampled from 1 UTM zone are the following: (Numbers in parentheses represent the total names recorded per host. The updated names per host are shown to the left of the parenthesis.)
 single_zone_host_names <- extract_names(host_species_names, single_zone_ids, "host_scientific_name")
@@ -90,29 +72,24 @@ host_species_longitudes_lst <- return_longitudes_per_UTM(multiple_zones_lst, dic
 updated_coordinates <- extract_longitudes(multiple_UTM_zones, host_species_longitudes_lst)
 updated_coordinates <- rename_samples_list(updated_coordinates, "Host")
 
+# I renamed the inner dataframes and removed empty dataframes, updating the original list of dataframes. 
 output <- rename_inner_lists(updated_coordinates, "Host")
 updated_coordinates <- output[[1]]
 removed_hosts <- output[[2]]
 rm(output)
 updated_coordinates <- remove_empty(updated_coordinates)
 
-# Hosts that were sampled from more than 1 UTM zone are: (Numbers in parentheses represent the total names recorded per host. The updated names per host are shown to the left of the parenthesis.) in order for me to do what I need, I will have to convert the names into a list so that I can change the elements easily
+# I fixed the names of the hosts using the function extract_names(). The function returns an updated list of names for hosts or environmental samples. This function's main purpose is meant to deal with multiple names for the host or environmental samples.
 multiple_zones_names <- extract_names(host_species_names, -single_zone_ids, "host_scientific_name", "list")
 
-# going through host species 8 first and then host species 4. I will need to create new lists that contain their new names, and then I would have to re-insert those new names into the original names list (similar to what I did with the updated_coordinates list). I want to have a list that contains: ["Ursus americanus americanus 1", "Ursus americanus americanus 2"] so that I can insert this list at multiple_zones_names[8], and then I want another list to insert at multiple_zones_names[4], which contains: ["Homo sapiens 1", "Homo sapiens 2"]. I believe that I will also need this: subset_length[[i]] > 0.
+# I kept track of the removed dataframes by using the function return_ids() and then I updated the names of the hosts in the variable multiple_zones_names.
 output <- return_ids(removed_hosts, updated_coordinates, "Host")
 multiple_zones_names <- change_all_multiple_samples_names(output, multiple_zones_names)
-
-# Alright, well I am going to try to calculate the distances using the great circle distances instead of UTM since it didn't work out. Alicia suggested it to me and that I should use the distm() function in the geosphere library. She used Haversine as the formula because it determines the great-circle distance between two points on a spehre given their longitudes and latitudes. https://en.wikipedia.org/wiki/Haversine_formula. If ?distHaversine then I can see that the return value of a Haversine distance is in meters.
-
-## Calculate distance between origin and sampling locations
-# this uses the Haversine to calculate half circle distance
-# longitude is labeled x, latitude labeled y
 
 # Next, I check the greatest distances per region for the host species that had multiple UTM zones. It is important to note that hosts 5 and 6 in this dataframe didn't get filtered which is why the distances are greater for hosts 5 and 6. But overall, the distances are fairly manageable. I also print the names of the host species to remind myself what they were. The maximum distances were calculated using the function max_dist(). A chart is printed as output, where the host names are the row names, and the maximum distances are the columns. 
 max_dist(updated_coordinates, multiple_zones_names)
 
-# Using the chart from above, I can see that I need to filter outliers from the data. To see which hosts contain outliers, I plot the coordinates by using the function plot_hosts(). There are 2 parameters: the list of coordinate dataframes per host, and the host names in order to the list of coordinates. 
+# Using the chart from above, I can see that I need to filter outliers from the data. To see which hosts contain outliers, I plot the coordinates by using the function plot_type(). There are 3 parameters: the list of coordinate dataframes per host, the host names in order to the list of coordinates, and the data type which is set to "Host". 
 plot_type(updated_coordinates, multiple_zones_names, "Host")
 
 # After viewing the plots, I need to remove the outlier in host species 1 (Canis lupus familiaris) and remove species 3 (Felis catus) because their distances are very large and host species 3 doesn't have enough samples after filtering out the American samples. I will filter the 12 samples that had a latitude of -29 (that would leave 32 samples to work with). 
@@ -161,33 +138,15 @@ sum(length(single_zone_coordinate_datasets), length(updated_coordinates))
 # I combined the lists so that I can do the PERMANOVA test
 combined_list_host_species <- c(single_zone_coordinate_datasets, updated_coordinates)
 combined_host_names <- c(single_zone_host_names, multiple_zones_names)
+
+# Viewing the maximum distances
 max_dist(combined_list_host_species, combined_host_names)
 
-# Plotting on world map
+# Combined the rows to create one dataframe. The idea is so that I could save the dataframe into a CSV file. 
 joined_hosts <- bind_rows(combined_list_host_species)
 
-plot_world_map(joined_hosts, 
-               "#D55E00", 
-               Longitude, 
-               Latitude, 
-               "World Map of the Filtered Host-Associated Microbiome Data", 
-               tiff = T, 
-               "Filtered_Host_world_map")
-
-# Testing out ####
-
-# Here I will plot the coordinates on the world map, but zoomed in to specific countries from which the samples were taken:
-
-library("rnaturalearth")
-library("rnaturalearthdata")
-
-world <- ne_countries(scale = "medium", returnclass = "sf")
-class(world)
-
-ggplot(data = world) +
-  geom_sf() +
-  coord_sf(xlim = c(-120, -80), ylim = c(20, 45), expand = FALSE) + 
-  geom_point(data = combined_list_host_species[[1]], aes(x = Longitude, y = Latitude), size = 5, shape = 21, fill = "blue")
+# Next, Saving the dataframe into a CSV file. It will be used in the script "Statistical_Models_and_Plotting.R".
+# write_csv(joined_hosts, "dataframe_hostAssociated.csv")
 
 # Conducting Spatial Pattern Analysis on 17 host species ####
 
@@ -226,7 +185,7 @@ PERMANOVA_tests_host_associated <- compute_PERMANOVA_tests(groups, lst_community
 results <- lapply(PERMANOVA_tests_host_associated, function(x) print(x))
 
 # I save the output into a TXT file using the function capture.output()
-capture.output(results, file = "PERMANOVA_results_host_23Nov2020.txt")
+# capture.output(results, file = "PERMANOVA_results_host_23Nov2020.txt")
 
 # In this next section, I created dataframes of the samples with their associated PERMANOVA test results. I will be using those results along with their maximum distances for a logistic regression model. I printed the results and then created the dataframe
 significance_of_tests <- bind_rows(PERMANOVA_tests_host_associated) %>% 
@@ -240,14 +199,20 @@ significance_of_tests
 # There is only 1 host that shows significance:
 significance_of_tests %>% filter(Pr..F. < 0.05)
 
-# the studies were: 
+# What sample types were taken from the significant host?
+lapply(greater_than_1_region, function(x) {unique(x$env_material[grep("1696", x$study_id)])})
+lapply(greater_than_1_region, function(x) {unique(x$country[grep("1696", x$study_id)])})
+
+# Getting a better idea of the host species:
 which(significance_of_tests$Pr..F.<0.05)
 combined_list_study_ids[which(significance_of_tests$Pr..F.<0.05)] %>% map(~.x %>% select(country) %>% table())
 
+# Creating a dataframe so that I can save it into a CSV file. The dataframe contains the PERMANOVA test results for each sample and the output from the function max_dist().
 significance_of_tests <- check_significance(significance_of_tests)
 dataframe_to_significance <- cbind(significance_of_tests, max_dist(combined_list_host_species, combined_host_names))
 dataframe_to_significance$`Maximum Distance (Km)` <- as.numeric(dataframe_to_significance$`Maximum Distance (Km)`)
 dataframe_to_significance$`Number of Records` <- as.numeric(dataframe_to_significance$`Number of Records`)
 
-write_csv(dataframe_to_significance, "host_significance_dataframe_23Nov2020.csv")
-write.table(combined_host_names, "combined_host_names_23Nov2020.txt", row.names = F, col.names = F, sep = ",")
+# Saving the data because they will be used in the script "Statistical_Models_and_Plotting.R".
+# write_csv(dataframe_to_significance, "host_significance_dataframe_23Nov2020.csv")
+# write.table(combined_host_names, "combined_host_names_23Nov2020.txt", row.names = F, col.names = F, sep = ",")

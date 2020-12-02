@@ -1,5 +1,5 @@
 # Teodora Tockovska
-# Sep 22, 2020
+# Dec 1, 2020
 
 # This script contains the exploratory data analysis for the Earth Microbiome metadata.
 
@@ -81,24 +81,24 @@ host_species_ids <- grep("Actinopteri|Aves|Insecta|Liliopsida|Mammalia|Amphibia|
 host_associated_microbiome_dataset <- EMP_metadata[host_species_ids,]
 environmental_microbiome_dataset <- EMP_metadata[-host_species_ids,]
 
-# Plotting the two datasets on the world map. First one will plot the host species. The second world map plots the environmental metadata.
-tiff("Hosts_world_map.tiff", units="in", width = 6, height = 3.5, res = 300)
+# Plotting the two datasets on the world map. First one will plot the host species. The second world map plots the environmental metadata. I commented out the sections to create tiff images.
+# tiff("Hosts_world_map.tiff", units="in", width = 6, height = 3.5, res = 300)
 ggplot(data = world) + 
   geom_sf() + 
   geom_point(data = host_associated_microbiome_dataset, aes(x = longitude_deg, y = latitude_deg), size = 2, shape = 21, fill = "#D55E00") + 
   labs(title = "World Map of Host Species in EMP Metadata", x = "Longitude", y = "Latitude") +
   theme(text = element_text(size = 10),
         plot.title = element_text(hjust = 0.5))
-dev.off()
+# dev.off()
 
-tiff("ENV_world_map.tiff", units="in", width = 6, height = 3.5, res = 300)
+# tiff("ENV_world_map.tiff", units="in", width = 6, height = 3.5, res = 300)
 ggplot(data = world) + 
   geom_sf() + 
   geom_point(data = environmental_microbiome_dataset, aes(x = longitude_deg, y = latitude_deg), size = 2, shape = 21, fill = "#882255") + 
   labs(title = "World Map of Environmental Microbiome Data", x = "Longitude", y = "Latitude") +
   theme(text = element_text(size = 10),
         plot.title = element_text(hjust = 0.5))
-dev.off()
+# dev.off()
 
 # Removing environmental variables that I don't need:
 rm(EMP_metadata, empty_class, world, host_species_ids, samples_per_country, biome_country_EMP, c__hosts, ven_bird_ids)
