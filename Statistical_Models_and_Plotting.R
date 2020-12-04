@@ -3,11 +3,7 @@
 
 # This script contains the code to calculate the Fisher exact test and logistic regression models. Paneled figures are also created in this script.
 
-# --- Loading Libraries and functions ----
-
-library("cowplot")
-
-# Loading my script which contains functions
+# Loading my script which contains functions and libraries
 source("Functions.R")
 
 # --- Reading Data and Performing Statistical Models ----
@@ -90,7 +86,7 @@ shapes_plot <- ggplot(data=df, aes(x=rownames(df), y=Significant, group=1, shape
   geom_text(aes(label=paste(Significant, "/", Total, sep = "")), hjust=1.6, colour="black", size=3.5)+
   theme_minimal() +
   xlab("Microbial Data Type") +
-  ylab("Number of Significant Samples") +
+  ylab("Number of Significant Datasets") +
   ggtitle("Significant Samples from\nMicrobial Data") +
   theme(legend.position = "none") + 
   theme(text = element_text(size = 11),

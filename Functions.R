@@ -15,6 +15,7 @@ library("fields")
 library("sf")
 library("rnaturalearth")
 library("rnaturalearthdata")
+library("cowplot")
 
 #' Remove rows that contain empty latitude and/or longitude coordinates. The parameter "dataset" is a dataframe that contained n samples (rows) and 76 observations (columns). 
 #' 
