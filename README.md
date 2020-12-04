@@ -1,5 +1,7 @@
 # Earth-Microbiome-Proj-Spatial-Patterns
-This repository stores my scripts and data files for my Master project. I analyzed the Earth Microbiome Project metadata data to determine whether microbiome diversity varied based on distance. In other words, my work involved investigating the spatial patterns in the metadata. The file descrptions are displayed below.
+This repository stores my scripts and data files for my Master project. I analyzed the Earth Microbiome Project metadata data to determine whether microbiome diversity varied based on distance. In other words, my work involved investigating the spatial patterns in the metadata. The file descrptions are displayed below. The first 5 scripts are displayed in the order in which they were used. 
+
+Sample IDs were extracted for host-associated and free-living datasets from scripts #3 and #4, which were saved in TSV files. Script #6 was used to extract the microbiome files for each TSV. Then, the PERMANOVA analyses were calculated in scripts #3 and #4. Script #7 was created first but script #6 was used the most.
 
 ### 1. EDA_EMP_dataset.R
 Contains the exploratory data analysis on the entire EMP metadata. The metadata is split into host-associated data and free-living data. <br />
